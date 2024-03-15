@@ -1,13 +1,13 @@
 FROM nginx
 
 
-LABEL description="CBO MFE Shell"
+LABEL description=" KE Shell"
 
-LABEL maintainer="dl.global.ifs.trs.it.cfm@rs2i.com"
+LABEL maintainer="KE@rawaa.com"
 
 
 
-ARG APP_NAME="cbo-mfe-shell"
+ARG APP_NAME="KE-shell"
 
 COPY --chown=101:101 index.html /usr/share/nginx/html
 COPY --chown=101:101 zeebe-exporter-2.7.3-SNAPSHOT.jar /etc/nginx/zeebe-exporter-2.7.3-SNAPSHOT.jar
