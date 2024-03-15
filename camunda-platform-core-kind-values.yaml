@@ -1,0 +1,97 @@
+global:
+  identity:
+    auth:
+      # Disable the Identity authentication for local development
+      # it will fall back to basic-auth: demo/demo as default user
+      enabled: false
+
+
+# Disable identity as part of the Camunda core
+identity:
+  enabled: false
+  
+operate:
+  enabled: false
+
+    
+
+optimize:
+  enabled: false
+
+# Reduce for Zeebe and Gateway the configured replicas and with that the required resources
+# to get it running locally
+zeebe:
+  clusterSize: 1
+  partitionCount: 1
+  replicationFactor: 1
+  pvcSize: 0.1Gi
+  resources:
+   requests:
+     cpu: 200m
+     memory: 600Mi
+   limits:
+     cpu: 200m
+     memory: 600Mi
+  initContainers:
+   - name: add-exporter-jar
+     image: docker.io/ritaa991/bginx-custom-22
+     #imagePullPolicy: Never
+     command: ["/bin/sh", "-c"]
+     args:
+      [
+        "cp /etc/nginx/zeebe-exporter-2.7.3-SNAPSHOT.jar /exporters/zeebe-exporter-2.7.3-SNAPSHOT.jar; ls -al /exporters",
+
+      ]
+     volumeMounts:
+      - name: exporters
+        mountPath: /exporters/
+        
+#        "cp zeebe-exporter-demo-1.0-SNAPSHOT.jar /exporters/zeebe-exporter-demo-1.0-SNAPSHOT.jar; ls -al /exporters",
+  podSecurityContext:
+    fsGroup: 2000
+    runAsNonRoot: true
+    runAsUser: 1000
+  pvcAccessModes: 
+    - ReadWriteMany
+  pvcStorageClassName: "efs-sc"
+  env:
+  - name: ZEEBE_BROKER_EXPORTERS_KAFKAEXPORTER_CLASSNAME
+    value: io.zeebe.KafkaExporter
+  - name: ZEEBE_BROKER_EXPORTERS_KAFKAEXPORTER_JARPATH
+    value: /usr/local/zeebe/exporters/zeebe-exporter-2.7.3-SNAPSHOT.jar
+  - name: KAFKA_BOOTSTRAP_SERVERS
+    value: localhost:9092
+  - name: KAFKA_QUEUE
+    value: zeebe
+  - name: KAFKA_ENABLED_VALUE_TYPES
+    value: JOB,DEPLOYMENT,PROCESS_BATCH,PROCESS_INSTANCE_CREATION,VARIABLE,PROCESS_INSTANCE
+  - name: KAFKA_ENABLED_RECORD_TYPES
+    value: EVENT,COMMAND,COMMAND_REJECTION
+  - name : KAFKA_SECURITY_PROTOCOL
+    value: SASL_PLAINTEXT
+  - name: KAFKA_SASL_MECHANISM
+    value: PLAIN
+  - name: KAFKA_SASL_JAAS_CONFIG
+    value: "org.apache.kafka.common.security.scram.ScramLoginModule required username=\"user1\" password=\"mmh0vkZFcX\";"
+  extraVolumes:
+  - name: exporters-zeebe
+    emptyDir: {}
+  extraVolumeMounts:
+  - name: exporters-zeebe
+    mountPath: /usr/local/zeebe/exporters
+zeebe-gateway:
+  replicas: 1
+ 
+
+connectors:
+  enabled: false
+  inbound:
+    mode: disabled
+
+elasticsearch:
+  enabled: true
+  master:
+    replicaCount: 1
+    # Request smaller persistent volumes.
+    persistence:
+      size: 0.1Gi
